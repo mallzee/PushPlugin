@@ -85,13 +85,18 @@
 
     isInline = NO;
 
-    [[UIApplication sharedApplication] registerForRemoteNotificationTypes:notificationTypes];
+    #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 80000
++        [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings settingsForTypes:(UIRemoteNotificationTypeSound | UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge) categories:nil]];
++        [[UIApplication sharedApplication] registerForRemoteNotifications]; // you can also set here for local notification.
++    #else
++        [[UIApplication sharedApplication] registerForRemoteNotificationTypes:notificationTypes];
++    #endif
 
-    if ([[UIApplication sharedApplication] enabledRemoteNotificationTypes] == 0)
-    {
-        NSError* error = nil;
-        [self failWithMessage:@"Push notifications disabled for Mallzee, please re-enable in Settings->Notification Centre" withError:error];
-    }
+    // if ([[UIApplication sharedApplication] enabledRemoteNotificationTypes] == 0)
+    // {
+    //     NSError* error = nil;
+    //     [self failWithMessage:@"Push notifications disabled for this app, please re-enable in Settings->Notification Centre" withError:error];
+    // }
 	
 	if (notificationMessage)			// if there is a pending startup notification
 		[self notificationReceived];	// go ahead and process it
