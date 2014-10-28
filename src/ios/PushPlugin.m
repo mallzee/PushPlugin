@@ -81,7 +81,7 @@
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 80000
             UserNotificationTypes |= UIUserNotificationTypeSound;
 #endif
-    }
+        }
     }
     else if ([soundArg boolValue]) {
         notificationTypes |= UIRemoteNotificationTypeSound;
@@ -97,7 +97,7 @@
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 80000
             UserNotificationTypes |= UIUserNotificationTypeAlert;
 #endif
-    }
+        }
     }
     else if ([alertArg boolValue]) {
         notificationTypes |= UIRemoteNotificationTypeAlert;
@@ -124,11 +124,12 @@
         [[UIApplication sharedApplication] registerUserNotificationSettings:settings];
         [[UIApplication sharedApplication] registerForRemoteNotifications];
     } else {
-    		[[UIApplication sharedApplication] registerForRemoteNotificationTypes:notificationTypes];
+    	[[UIApplication sharedApplication] registerForRemoteNotificationTypes:notificationTypes];
     }
 #else
-		[[UIApplication sharedApplication] registerForRemoteNotificationTypes:notificationTypes];
+	[[UIApplication sharedApplication] registerForRemoteNotificationTypes:notificationTypes];
 #endif
+
 
 	if (notificationMessage)			// if there is a pending startup notification
 		[self notificationReceived];	// go ahead and process it
@@ -142,13 +143,10 @@
 }
 */
 
-- (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+- (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSString *)deviceToken {
 
     NSMutableDictionary *results = [NSMutableDictionary dictionary];
-    NSString *token = [[[[deviceToken description] stringByReplacingOccurrencesOfString:@"<"withString:@""]
-                        stringByReplacingOccurrencesOfString:@">" withString:@""]
-                       stringByReplacingOccurrencesOfString: @" " withString: @""];
-    [results setValue:token forKey:@"deviceToken"];
+    [results setValue:deviceToken forKey:@"deviceToken"];
 
     #if !TARGET_IPHONE_SIMULATOR
         // Get Bundle Info for Remote Registration (handy if you have more than one app)
@@ -187,7 +185,7 @@
         [results setValue:dev.model forKey:@"deviceModel"];
         [results setValue:dev.systemVersion forKey:@"deviceSystemVersion"];
 
-		[self successWithMessage:[NSString stringWithFormat:@"%@", token]];
+		[self successWithMessage:[NSString stringWithFormat:@"%@", deviceToken]];
     #endif
 }
 

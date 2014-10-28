@@ -10,6 +10,8 @@
 #import "PushPlugin.h"
 #import <objc/runtime.h>
 
+NSString* const CDVRemoteNotificationReceived = @"CDVRemoteNotificationReceived";
+
 static char launchNotificationKey;
 
 @implementation AppDelegate (notification)
@@ -24,7 +26,7 @@ static char launchNotificationKey;
 + (void)load
 {
     Method original, swizzled;
-    
+
     original = class_getInstanceMethod(self, @selector(init));
     swizzled = class_getInstanceMethod(self, @selector(swizzled_init));
     method_exchangeImplementations(original, swizzled);
@@ -34,7 +36,7 @@ static char launchNotificationKey;
 {
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(createNotificationChecker:)
                name:@"UIApplicationDidFinishLaunchingNotification" object:nil];
-	
+
 	// This actually calls the original init method over in AppDelegate. Equivilent to calling super
 	// on an overrided method, this is not recursive, although it appears that way. neat huh?
 	return [self swizzled_init];
@@ -53,24 +55,32 @@ static char launchNotificationKey;
 }
 
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+    // re-post ( broadcast )
+    NSString* token = [[[[deviceToken description]
+                         stringByReplacingOccurrencesOfString: @"<" withString: @""]
+                        stringByReplacingOccurrencesOfString: @">" withString: @""]
+                       stringByReplacingOccurrencesOfString: @" " withString: @""];
+
     PushPlugin *pushHandler = [self getCommandInstance:@"PushPlugin"];
-    [pushHandler didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+    [pushHandler didRegisterForRemoteNotificationsWithDeviceToken:token];
+    [[NSNotificationCenter defaultCenter] postNotificationName:CDVRemoteNotification object:token];
 }
 
 - (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
     PushPlugin *pushHandler = [self getCommandInstance:@"PushPlugin"];
     [pushHandler didFailToRegisterForRemoteNotificationsWithError:error];
+    [[NSNotificationCenter defaultCenter] postNotificationName:CDVRemoteNotificationError object:error];
 }
 
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo {
     NSLog(@"didReceiveNotification");
-    
+
     // Get application state for iOS4.x+ devices, otherwise assume active
     UIApplicationState appState = UIApplicationStateActive;
     if ([application respondsToSelector:@selector(applicationState)]) {
         appState = application.applicationState;
     }
-    
+
     if (appState == UIApplicationStateActive) {
         PushPlugin *pushHandler = [self getCommandInstance:@"PushPlugin"];
         pushHandler.notificationMessage = userInfo;
@@ -80,18 +90,19 @@ static char launchNotificationKey;
         //save it for later
         self.launchNotification = userInfo;
     }
+    [[NSNotificationCenter defaultCenter] postNotificationName:CDVRemoteNotificationReceived object:userInfo];
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
-    
+
     NSLog(@"active");
-    
+
     //zero badge
     application.applicationIconBadgeNumber = 0;
 
     if (self.launchNotification) {
         PushPlugin *pushHandler = [self getCommandInstance:@"PushPlugin"];
-		
+
         pushHandler.notificationMessage = self.launchNotification;
         self.launchNotification = nil;
         [pushHandler performSelectorOnMainThread:@selector(notificationReceived) withObject:pushHandler waitUntilDone:NO];

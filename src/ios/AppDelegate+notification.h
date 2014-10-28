@@ -8,6 +8,8 @@
 
 #import "AppDelegate.h"
 
+extern NSString* const CDVRemoteNotificationReceived;
+
 @interface AppDelegate (notification)
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;
 - (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error;
